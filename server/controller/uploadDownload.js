@@ -1,5 +1,6 @@
 var fs = require('fs'),
-    config = require('./config/config'); 
+    walk    = require('walk'),
+    config = require('../config/config'); 
 /*
  * Display upload form
  */
@@ -18,7 +19,7 @@ exports.display_form = function(req, res) {
  * upload file
  */
 
-exports.uploadFile = function(req, res, next) {
+exports.uploadFile = function(req, res) {
     var tmp_path = req.files.file.path;
     // set where the file should actually exists - in this case it is in the "images" directory
     fs.exists(config.publicFolder, function (exists) {
@@ -32,8 +33,7 @@ exports.uploadFile = function(req, res, next) {
                 var target_path = config.publicFolder+config.uploadFolder+'/' + req.files.file.name ;
                 read(target_path);
               });
-    }) //req.files.file.name;
-    // move the file from the temporary location to the intended location
+    }) 
     function read(target_path){
           var is = fs.createReadStream(tmp_path);
           var os = fs.createWriteStream(target_path);
@@ -48,7 +48,7 @@ exports.uploadFile = function(req, res, next) {
 /**
 *get file
 */
-exports.getFile = function(req , res , next){
+exports.getFile = function(req, res){
   var file = req.params.file
     , path = config.publicFolder+config.uploadFolder+"/" + file
     , ext = file.substr(file.lastIndexOf('.') + 1);
@@ -74,3 +74,23 @@ exports.getFile = function(req , res , next){
     }
   else res.download(path);
 };
+
+/**
+*get fileList
+*/
+exports.fileList = function(req, res){
+      var files   = [];
+      // Walker options
+      var path_dir = config.publicFolder+config.uploadFolder;
+      var walker  = walk.walk(path_dir, { followLinks: false });
+
+      walker.on('file', function(root, stat, next) {
+          // Add this file to the list of files
+          files.push(stat.name);
+          next();
+      });
+
+      walker.on('end', function() {
+            return res.json(files);
+      });  
+}

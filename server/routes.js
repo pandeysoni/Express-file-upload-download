@@ -11,4 +11,6 @@ module.exports = function(app){
 
 	app.get('/getFile/:file', UD.getFile);
 
+	app.get('/fileList', UD.fileList);
+
 }
